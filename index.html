@@ -272,8 +272,13 @@ async function loadCards() {
   if (latest.length) {
     document.getElementById('v5min').textContent =
       parseFloat(latest[0].rainfall_in).toFixed(4);
-    document.getElementById('v24h').textContent =
-      parseFloat(latest[0].total_24h).toFixed(4);
+    const midnight = new Date();
+midnight.setHours(0, 0, 0, 0);
+const todayData = await sbQuery(
+  `rainfall?select=rainfall_in&timestamp=gte.${midnight.toISOString()}`
+);
+const todayTotal = todayData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
+document.getElementById('v24h').textContent = todayTotal.toFixed(4);
     document.getElementById('vlastreading').textContent =
       new Date(latest[0].timestamp).toLocaleString();
   }
