@@ -141,7 +141,7 @@ footer {
   <span class="hicon">🌧</span>
   <div>
     <h1>Rain Gauge Station</h1>
-    <p class="hsub">Tipping Bucket · 0.201 mm/tip · Live from Supabase</p>
+    <p class="hsub">Tipping Bucket · 0.201 mm/tip · Live from Supabase · Eastern Time</p>
   </div>
   <div class="hright">
     <span class="last-sync" id="syncLabel">Loading…</span>
@@ -159,7 +159,7 @@ footer {
     <div class="card">
       <div class="card-lbl">Today's Total</div>
       <div class="card-val" id="v24h">—</div>
-      <div class="card-unit">inches</div>
+      <div class="card-unit">inches (resets midnight ET)</div>
     </div>
     <div class="card">
       <div class="card-lbl">This Month</div>
@@ -169,7 +169,7 @@ footer {
     <div class="card">
       <div class="card-lbl">Last Reading</div>
       <div class="card-val" id="vlastreading" style="font-size:.85rem;padding-top:6px">—</div>
-      <div class="card-unit">local time</div>
+      <div class="card-unit">Eastern Time</div>
     </div>
   </div>
 
@@ -177,9 +177,9 @@ footer {
     <div class="box-title">
       5-Minute Rainfall
       <div class="range-btns">
-        <button class="rbtn active" onclick="setRange(24,this)">24h</button>
-        <button class="rbtn"        onclick="setRange(72,this)">72h</button>
-        <button class="rbtn"        onclick="setRange(168,this)">7d</button>
+        <button class="rbtn active" id="btn24"  onclick="setRange(24,  this)">24h</button>
+        <button class="rbtn"        id="btn72"  onclick="setRange(72,  this)">72h</button>
+        <button class="rbtn"        id="btn168" onclick="setRange(168, this)">7d</button>
       </div>
     </div>
     <div id="barLoading" class="loading"><span class="spinner"></span>Fetching data…</div>
@@ -199,9 +199,9 @@ footer {
       <table>
         <thead>
           <tr>
-            <th>Timestamp</th>
+            <th>Timestamp (ET)</th>
             <th>Rainfall (in)</th>
-            <th>24h Total (in)</th>
+            <th>Today's Total (in)</th>
             <th>Tips</th>
             <th>Visual</th>
           </tr>
@@ -220,11 +220,25 @@ footer {
 // ── Supabase credentials ──────────────────────────────────────────────────────
 const SUPABASE_URL      = 'https://gavzjtjhaeyzukzvjmvm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhdnpqdGpoYWV5enVrenZqbXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDc0MDcsImV4cCI6MjA4OTIyMzQwN30.5nukel0xQfhfmk9G1vA4UGUVXJK_NigyGEuaOzyc-sY';
+const TZ = 'America/New_York';
 // ─────────────────────────────────────────────────────────────────────────────
 
 let barChartInst   = null;
 let dailyChartInst = null;
 let currentHours   = 24;
+
+// Format a UTC date string to Eastern Time display
+function toET(isoString) {
+  return new Date(isoString).toLocaleString('en-US', { timeZone: TZ });
+}
+
+// Get midnight Eastern Time as a UTC ISO string (for Supabase queries)
+function midnightET() {
+  // Get current date string in ET
+  const etDateStr = new Date().toLocaleDateString('en-CA', { timeZone: TZ }); // YYYY-MM-DD
+  // Construct midnight ET and convert to UTC ISO
+  return new Date(`${etDateStr}T00:00:00-05:00`).toISOString();
+}
 
 // Rain background animation
 (function() {
@@ -254,9 +268,9 @@ async function sbQuery(path) {
   return r.json();
 }
 
-const gridColor   = 'rgba(30,58,95,0.4)';
-const tickStyle   = { color: '#4a7fa5', font: { size: 10 } };
-const yAxisConfig = {
+const gridColor  = 'rgba(30,58,95,0.4)';
+const tickStyle  = { color: '#4a7fa5', font: { size: 10 } };
+const yAxis = {
   ticks: tickStyle,
   grid: { color: gridColor },
   beginAtZero: true,
@@ -265,36 +279,34 @@ const yAxisConfig = {
 
 // ── Stat cards ────────────────────────────────────────────────────────────────
 async function loadCards() {
-  // Latest record
+  // Latest record for last-5-min reading
   const latest = await sbQuery(
-    'rainfall?select=timestamp,rainfall_in,total_24h&order=timestamp.desc&limit=1'
+    'rainfall?select=timestamp,rainfall_in&order=timestamp.desc&limit=1'
   );
   if (latest.length) {
     document.getElementById('v5min').textContent =
       parseFloat(latest[0].rainfall_in).toFixed(4);
-    const midnight = new Date();
-midnight.setHours(0, 0, 0, 0);
-const todayData = await sbQuery(
-  `rainfall?select=rainfall_in&timestamp=gte.${midnight.toISOString()}`
-);
-const todayTotal = todayData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
-document.getElementById('v24h').textContent = todayTotal.toFixed(4);
     document.getElementById('vlastreading').textContent =
-      new Date(latest[0].timestamp).toLocaleString();
+      toET(latest[0].timestamp);
   }
 
-  // Month total — sum all rainfall_in from start of current month
-  const monthStart = new Date();
-  monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-  const monthData = await sbQuery(
-    `rainfall?select=rainfall_in&timestamp=gte.${monthStart.toISOString()}`
+  // Today's total — sum all rainfall_in since midnight ET
+  const todayData = await sbQuery(
+    `rainfall?select=rainfall_in&timestamp=gte.${midnightET()}`
+  );
+  const todayTotal = todayData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
+  document.getElementById('v24h').textContent = todayTotal.toFixed(4);
+
+  // This month's total
+  const monthStart = new Date().toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
+  const monthData  = await sbQuery(
+    `rainfall?select=rainfall_in&timestamp=gte.${monthStart}-01T00:00:00-05:00`
   );
   const monthTotal = monthData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
   document.getElementById('vmonth').textContent = monthTotal.toFixed(4);
 
-  // Update sync label
   document.getElementById('syncLabel').textContent =
-    'Updated ' + new Date().toLocaleTimeString();
+    'Updated ' + new Date().toLocaleTimeString('en-US', { timeZone: TZ }) + ' ET';
   document.getElementById('statusDot').classList.remove('err');
 }
 
@@ -303,8 +315,13 @@ async function loadBarChart(hours) {
   document.getElementById('barLoading').style.display = 'block';
   document.getElementById('barChart').style.display   = 'none';
 
-  const since = new Date(Date.now() - hours * 3600 * 1000).toISOString();
-  const data  = await sbQuery(
+  if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
+
+  const minTime = new Date(Date.now() - hours * 3600 * 1000);
+  const maxTime = new Date();
+  const since   = minTime.toISOString();
+
+  const data = await sbQuery(
     `rainfall?select=timestamp,rainfall_in&timestamp=gte.${since}&order=timestamp.asc&limit=2016`
   );
 
@@ -312,38 +329,62 @@ async function loadBarChart(hours) {
   const canvas = document.getElementById('barChart');
   canvas.style.display = 'block';
 
-  const labels = data.map(r => new Date(r.timestamp));
-  const values = data.map(r => parseFloat(r.rainfall_in));
+  // Use {x, y} objects — required for time scale to render bars correctly
+  const points = data.map(r => ({
+    x: new Date(r.timestamp).getTime(),
+    y: parseFloat(r.rainfall_in)
+  }));
 
-  if (barChartInst) barChartInst.destroy();
+  // Pick sensible tick unit and format for each range
+  let unit, displayFormats;
+  if (hours <= 24) {
+    unit = 'hour';
+    displayFormats = { hour: 'h:mm a' };
+  } else if (hours <= 72) {
+    unit = 'hour';
+    displayFormats = { hour: 'MM/dd ha' };
+  } else {
+    unit = 'day';
+    displayFormats = { day: 'MM/dd' };
+  }
+
   barChartInst = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
-      labels,
       datasets: [{
-        label: 'Rainfall (in)', data: values,
-        backgroundColor: 'rgba(0,200,255,0.18)',
-        borderColor: 'rgba(0,200,255,0.85)',
-        borderWidth: 1, borderRadius: 2
+        label: 'Rainfall (in)',
+        data: points,
+        backgroundColor: 'rgba(0,200,255,0.22)',
+        borderColor:     'rgba(0,200,255,0.9)',
+        borderWidth: 1,
+        borderRadius: 2,
+        barPercentage: 0.9,
+        categoryPercentage: 1.0
       }]
     },
     options: {
       responsive: true,
+      animation: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => c.parsed.y.toFixed(4) + ' in' } }
+        tooltip: {
+          callbacks: {
+            title: items => new Date(items[0].parsed.x)
+              .toLocaleString('en-US', { timeZone: TZ }),
+            label: c => c.parsed.y.toFixed(4) + ' in'
+          }
+        }
       },
       scales: {
         x: {
           type: 'time',
-          time: {
-            tooltipFormat: 'MM/dd HH:mm',
-            displayFormats: { hour: 'MM/dd HH:mm', day: 'MM/dd' }
-          },
-          ticks: { ...tickStyle, maxTicksLimit: 10 },
+          min: minTime.getTime(),
+          max: maxTime.getTime(),
+          time: { unit, displayFormats },
+          ticks: { ...tickStyle, maxTicksLimit: 12 },
           grid: { color: gridColor }
         },
-        y: yAxisConfig
+        y: yAxis
       }
     }
   });
@@ -356,14 +397,22 @@ async function loadDailyChart() {
     `rainfall?select=timestamp,rainfall_in&timestamp=gte.${since}&order=timestamp.asc&limit=10000`
   );
 
-  // Aggregate by local date
+  // Aggregate by Eastern Time date
   const daily = {};
   data.forEach(r => {
-    const d = new Date(r.timestamp).toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const d = new Date(r.timestamp).toLocaleDateString('en-CA', { timeZone: TZ });
     daily[d] = (daily[d] || 0) + parseFloat(r.rainfall_in);
   });
-  const dates  = Object.keys(daily).sort();
-  const totals = dates.map(d => +daily[d].toFixed(4));
+
+  // Build a full 30-day array — zero for days with no rain so x-axis is complete
+  const allDates = [];
+  const allTotals = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400 * 1000)
+      .toLocaleDateString('en-CA', { timeZone: TZ });
+    allDates.push(d);
+    allTotals.push(+(daily[d] || 0).toFixed(4));
+  }
 
   document.getElementById('dailyLoading').style.display = 'none';
   const canvas = document.getElementById('dailyChart');
@@ -373,23 +422,35 @@ async function loadDailyChart() {
   dailyChartInst = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: dates,
+      labels: allDates,
       datasets: [{
-        label: 'Daily Total (in)', data: totals,
+        label: 'Daily Total (in)',
+        data: allTotals,
         backgroundColor: 'rgba(0,85,221,0.35)',
-        borderColor: 'rgba(0,150,255,0.85)',
-        borderWidth: 1, borderRadius: 3
+        borderColor:     'rgba(0,150,255,0.85)',
+        borderWidth: 1,
+        borderRadius: 3,
+        barPercentage: 0.85,
+        categoryPercentage: 0.9
       }]
     },
     options: {
       responsive: true,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => c.parsed.y.toFixed(4) + ' in' } }
+        tooltip: {
+          callbacks: {
+            title: items => items[0].label,
+            label: c => c.parsed.y.toFixed(4) + ' in'
+          }
+        }
       },
       scales: {
-        x: { ticks: { ...tickStyle, maxTicksLimit: 15 }, grid: { color: gridColor } },
-        y: yAxisConfig
+        x: {
+          ticks: { ...tickStyle, maxRotation: 45, minRotation: 45 },
+          grid: { color: gridColor }
+        },
+        y: yAxis
       }
     }
   });
@@ -408,7 +469,7 @@ async function loadTable() {
   document.getElementById('tableBody').innerHTML = data.map(r => {
     const barW = Math.min((parseFloat(r.rainfall_in) / maxIn) * 120, 120);
     return `<tr>
-      <td>${new Date(r.timestamp).toLocaleString()}</td>
+      <td>${toET(r.timestamp)}</td>
       <td>${parseFloat(r.rainfall_in).toFixed(4)}</td>
       <td>${parseFloat(r.total_24h).toFixed(4)}</td>
       <td>${r.tips}</td>
@@ -432,7 +493,7 @@ function handleError(err) {
   document.getElementById('statusDot').classList.add('err');
 }
 
-// ── Initial load ──────────────────────────────────────────────────────────────
+// ── Load everything ───────────────────────────────────────────────────────────
 async function loadAll() {
   try {
     await Promise.all([
