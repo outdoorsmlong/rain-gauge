@@ -174,11 +174,11 @@ footer {
   </div>
 
   <div class="cards">
-    <div class="card">
-      <div class="card-lbl">Last 5 Minutes</div>
-      <div class="card-val" id="v5min">—</div>
+  <div class="card">
+      <div class="card-lbl">Last Hour</div>
+      <div class="card-val" id="vhour">—</div>
       <div class="card-unit">inches</div>
-    </div>
+  </div>
     <div class="card">
       <div class="card-lbl">Today's Total</div>
       <div class="card-val" id="v24h">—</div>
@@ -291,14 +291,22 @@ const yAxis = {
 };
 
 async function loadCards() {
+ // Latest record — used for "Last Reading" timestamp
   const latest = await sbQuery(
-    'rainfall?select=timestamp,rainfall_in&order=timestamp.desc&limit=1'
+    'rainfall?select=timestamp&order=timestamp.desc&limit=1'
   );
   if (latest.length) {
-    document.getElementById('v5min').textContent =
-      parseFloat(latest[0].rainfall_in).toFixed(4);
     document.getElementById('vlastreading').textContent =
       toET(latest[0].timestamp);
+  }
+
+  // Last hour total — sum all 5-min records from the past 60 minutes
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const hourData = await sbQuery(
+    `rainfall?select=rainfall_in&timestamp=gte.${oneHourAgo}`
+  );
+  const hourTotal = hourData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
+  document.getElementById('vhour').textContent = hourTotal.toFixed(4);
   }
 
   const todayData = await sbQuery(
