@@ -333,31 +333,50 @@ async function loadBarChart(hours) {
   document.getElementById('barLoading').style.display = 'none';
   document.getElementById('barChart').style.display = 'block';
 
-  const points = data.map(r => ({
-    x: new Date(r.timestamp).getTime(),
-    y: parseFloat(r.rainfall_in)
-  }));
+  // Choose bucket size based on range:
+  // 24h → 5-min raw, 72h → 1-hr buckets, 7d → 6-hr buckets
+  let bucketMs, unit, displayFormats, yTitle;
+  if (hours <= 24) {
+    bucketMs = 5 * 60 * 1000;
+    unit = 'hour';
+    displayFormats = { hour: 'h:mm a' };
+    yTitle = 'Inches (per 5 min)';
+  } else if (hours <= 72) {
+    bucketMs = 60 * 60 * 1000;            // 1 hour
+    unit = 'hour';
+    displayFormats = { hour: 'MM/dd ha' };
+    yTitle = 'Inches (per hour)';
+  } else {
+    bucketMs = 6 * 60 * 60 * 1000;        // 6 hours
+    unit = 'day';
+    displayFormats = { day: 'MM/dd', hour: 'MM/dd ha' };
+    yTitle = 'Inches (per 6 hours)';
+  }
 
-  let unit, displayFormats;
-  if (hours <= 24) { unit = 'hour'; displayFormats = { hour: 'h:mm a' }; }
-  else if (hours <= 72) { unit = 'hour'; displayFormats = { hour: 'MM/dd ha' }; }
-  else { unit = 'day'; displayFormats = { day: 'MM/dd' }; }
+  // Aggregate data into buckets
+  const buckets = new Map();
+  data.forEach(r => {
+    const t = new Date(r.timestamp).getTime();
+    const bucketStart = Math.floor(t / bucketMs) * bucketMs;
+    buckets.set(bucketStart, (buckets.get(bucketStart) || 0) + parseFloat(r.rainfall_in));
+  });
 
-  // Bar width scales with how wide the time range is — wider bars on longer ranges
-  const barWidth = hours <= 24 ? 0.85 : (hours <= 72 ? 0.92 : 0.98);
+  const points = Array.from(buckets.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([x, y]) => ({ x, y: +y.toFixed(4) }));
 
   barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), {
     type: 'bar',
     data: {
       datasets: [{
         label: 'Rainfall (in)', data: points,
-        backgroundColor: 'rgba(0,200,255,0.65)',
+        backgroundColor: 'rgba(0,200,255,0.7)',
         borderColor:     'rgba(120,240,255,1.0)',
         borderWidth: 2,
-        borderRadius: 2,
-        barPercentage: barWidth,
+        borderRadius: 3,
+        barPercentage: 0.95,
         categoryPercentage: 1.0,
-        minBarLength: 3   // ensures non-zero bars are always visible
+        minBarLength: 4
       }]
     },
     options: {
@@ -375,68 +394,22 @@ async function loadBarChart(hours) {
         x: {
           type: 'time',
           min: minTime.getTime(), max: maxTime.getTime(),
-          time: { unit, displayFormats },
+          time: {
+            unit,
+            displayFormats,
+            // Tell Chart.js exactly how wide each bar should be in time units
+            round: false
+          },
+          offset: true,  // adds padding so first/last bars aren't clipped
           ticks: { ...tickStyle, maxTicksLimit: 12 },
           grid: { color: gridColor }
         },
-        y: yAxis
-      }
-    }
-  });
-}
-
-async function loadDailyChart() {
-  const since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
-  const data = await sbQuery(
-    `rainfall?select=timestamp,rainfall_in&timestamp=gte.${since}&order=timestamp.asc&limit=10000`
-  );
-
-  const daily = {};
-  data.forEach(r => {
-    const d = new Date(r.timestamp).toLocaleDateString('en-CA', { timeZone: TZ });
-    daily[d] = (daily[d] || 0) + parseFloat(r.rainfall_in);
-  });
-
-  const allDates = [], allTotals = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400 * 1000).toLocaleDateString('en-CA', { timeZone: TZ });
-    allDates.push(d);
-    allTotals.push(+(daily[d] || 0).toFixed(4));
-  }
-
-  document.getElementById('dailyLoading').style.display = 'none';
-  document.getElementById('dailyChart').style.display = 'block';
-  if (dailyChartInst) dailyChartInst.destroy();
-
-  dailyChartInst = new Chart(document.getElementById('dailyChart').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: allDates,
-      datasets: [{
-        label: 'Daily Total (in)', data: allTotals,
-        backgroundColor: 'rgba(0,150,255,0.7)',
-        borderColor:     'rgba(120,240,255,1.0)',
-        borderWidth: 2,
-        borderRadius: 3,
-        barPercentage: 0.85,
-        categoryPercentage: 0.9,
-        minBarLength: 3
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => items[0].label,
-            label: c => c.parsed.y.toFixed(4) + ' in'
-          }
+        y: {
+          ticks: tickStyle,
+          grid: { color: gridColor },
+          beginAtZero: true,
+          title: { display: true, text: yTitle, color: '#4a7fa5', font: { size: 11 } }
         }
-      },
-      scales: {
-        x: { ticks: { ...tickStyle, maxRotation: 45, minRotation: 45 }, grid: { color: gridColor } },
-        y: yAxis
       }
     }
   });
