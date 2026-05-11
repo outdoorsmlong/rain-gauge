@@ -19,6 +19,7 @@
   --muted:   #4a7fa5;
   --green:   #00ff88;
   --red:     #ff4466;
+  --notice:  #ffcc44;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -51,6 +52,20 @@ header h1 {
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
 
 main { padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
+
+.notice {
+  background: linear-gradient(90deg, rgba(255,204,68,.08), rgba(255,204,68,.04));
+  border: 1px solid rgba(255,204,68,.4);
+  border-left: 4px solid var(--notice);
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+  font-size: .85rem;
+}
+.notice-icon { font-size: 1.2rem; }
+.notice-text { color: #ffe8b3; line-height: 1.4; }
+.notice-text strong { color: var(--notice); font-family: 'Share Tech Mono', monospace; font-size: .8rem; letter-spacing: .08em; }
 
 .cards {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -141,7 +156,7 @@ footer {
   <span class="hicon">🌧</span>
   <div>
     <h1>Rain Gauge Station</h1>
-    <p class="hsub">Tipping Bucket · 0.201 mm/tip · Live from M Long House · Eastern Time</p>
+    <p class="hsub">Tipping Bucket · 0.201 mm/tip · Eastern Time</p>
   </div>
   <div class="hright">
     <span class="last-sync" id="syncLabel">Loading…</span>
@@ -150,6 +165,14 @@ footer {
 </header>
 
 <main>
+
+  <div class="notice">
+    <span class="notice-icon">⏱️</span>
+    <div class="notice-text">
+      <strong>HEADS UP</strong> — 5-minute rainfall data is captured on the station and uploaded to this dashboard once per hour in a single batch to conserve solar battery power. Records can be up to <b>60 minutes delayed</b>, but every 5-minute interval is preserved.
+    </div>
+  </div>
+
   <div class="cards">
     <div class="card">
       <div class="card-lbl">Last 5 Minutes</div>
@@ -177,9 +200,9 @@ footer {
     <div class="box-title">
       5-Minute Rainfall
       <div class="range-btns">
-        <button class="rbtn active" id="btn24"  onclick="setRange(24,  this)">24h</button>
-        <button class="rbtn"        id="btn72"  onclick="setRange(72,  this)">72h</button>
-        <button class="rbtn"        id="btn168" onclick="setRange(168, this)">7d</button>
+        <button class="rbtn active" onclick="setRange(24,  this)">24h</button>
+        <button class="rbtn"        onclick="setRange(72,  this)">72h</button>
+        <button class="rbtn"        onclick="setRange(168, this)">7d</button>
       </div>
     </div>
     <div id="barLoading" class="loading"><span class="spinner"></span>Fetching data…</div>
@@ -213,34 +236,25 @@ footer {
 </main>
 
 <footer>
-  RAIN GAUGE STATION &middot; POWERED BY SUPABASE &middot; AUTO-REFRESH EVERY 5 MIN
+  RAIN GAUGE STATION &middot; POWERED BY SUPABASE &middot; HOURLY BATCH UPLOAD
 </footer>
 
 <script>
-// ── Supabase credentials ──────────────────────────────────────────────────────
 const SUPABASE_URL      = 'https://gavzjtjhaeyzukzvjmvm.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhdnpqdGpoYWV5enVrenZqbXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDc0MDcsImV4cCI6MjA4OTIyMzQwN30.5nukel0xQfhfmk9G1vA4UGUVXJK_NigyGEuaOzyc-sY';
 const TZ = 'America/New_York';
-// ─────────────────────────────────────────────────────────────────────────────
 
-let barChartInst   = null;
-let dailyChartInst = null;
-let currentHours   = 24;
+let barChartInst = null, dailyChartInst = null;
+let currentHours = 24;
 
-// Format a UTC date string to Eastern Time display
 function toET(isoString) {
   return new Date(isoString).toLocaleString('en-US', { timeZone: TZ });
 }
-
-// Get midnight Eastern Time as a UTC ISO string (for Supabase queries)
 function midnightET() {
-  // Get current date string in ET
-  const etDateStr = new Date().toLocaleDateString('en-CA', { timeZone: TZ }); // YYYY-MM-DD
-  // Construct midnight ET and convert to UTC ISO
+  const etDateStr = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
   return new Date(`${etDateStr}T00:00:00-05:00`).toISOString();
 }
 
-// Rain background animation
 (function() {
   const bg = document.getElementById('rainBg');
   for (let i = 0; i < 40; i++) {
@@ -256,7 +270,6 @@ function midnightET() {
   }
 })();
 
-// Supabase REST helper
 async function sbQuery(path) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     headers: {
@@ -268,8 +281,8 @@ async function sbQuery(path) {
   return r.json();
 }
 
-const gridColor  = 'rgba(30,58,95,0.4)';
-const tickStyle  = { color: '#4a7fa5', font: { size: 10 } };
+const gridColor = 'rgba(30,58,95,0.4)';
+const tickStyle = { color: '#4a7fa5', font: { size: 10 } };
 const yAxis = {
   ticks: tickStyle,
   grid: { color: gridColor },
@@ -277,9 +290,7 @@ const yAxis = {
   title: { display: true, text: 'Inches', color: '#4a7fa5', font: { size: 11 } }
 };
 
-// ── Stat cards ────────────────────────────────────────────────────────────────
 async function loadCards() {
-  // Latest record for last-5-min reading
   const latest = await sbQuery(
     'rainfall?select=timestamp,rainfall_in&order=timestamp.desc&limit=1'
   );
@@ -290,16 +301,14 @@ async function loadCards() {
       toET(latest[0].timestamp);
   }
 
-  // Today's total — sum all rainfall_in since midnight ET
   const todayData = await sbQuery(
     `rainfall?select=rainfall_in&timestamp=gte.${midnightET()}`
   );
   const todayTotal = todayData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
   document.getElementById('v24h').textContent = todayTotal.toFixed(4);
 
-  // This month's total
   const monthStart = new Date().toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
-  const monthData  = await sbQuery(
+  const monthData = await sbQuery(
     `rainfall?select=rainfall_in&timestamp=gte.${monthStart}-01T00:00:00-05:00`
   );
   const monthTotal = monthData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
@@ -310,67 +319,54 @@ async function loadCards() {
   document.getElementById('statusDot').classList.remove('err');
 }
 
-// ── 5-min bar chart ───────────────────────────────────────────────────────────
 async function loadBarChart(hours) {
   document.getElementById('barLoading').style.display = 'block';
   document.getElementById('barChart').style.display   = 'none';
-
   if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
 
   const minTime = new Date(Date.now() - hours * 3600 * 1000);
   const maxTime = new Date();
-  const since   = minTime.toISOString();
-
   const data = await sbQuery(
-    `rainfall?select=timestamp,rainfall_in&timestamp=gte.${since}&order=timestamp.asc&limit=2016`
+    `rainfall?select=timestamp,rainfall_in&timestamp=gte.${minTime.toISOString()}&order=timestamp.asc&limit=2016`
   );
 
   document.getElementById('barLoading').style.display = 'none';
-  const canvas = document.getElementById('barChart');
-  canvas.style.display = 'block';
+  document.getElementById('barChart').style.display = 'block';
 
-  // Use {x, y} objects — required for time scale to render bars correctly
   const points = data.map(r => ({
     x: new Date(r.timestamp).getTime(),
     y: parseFloat(r.rainfall_in)
   }));
 
-  // Pick sensible tick unit and format for each range
   let unit, displayFormats;
-  if (hours <= 24) {
-    unit = 'hour';
-    displayFormats = { hour: 'h:mm a' };
-  } else if (hours <= 72) {
-    unit = 'hour';
-    displayFormats = { hour: 'MM/dd ha' };
-  } else {
-    unit = 'day';
-    displayFormats = { day: 'MM/dd' };
-  }
+  if (hours <= 24) { unit = 'hour'; displayFormats = { hour: 'h:mm a' }; }
+  else if (hours <= 72) { unit = 'hour'; displayFormats = { hour: 'MM/dd ha' }; }
+  else { unit = 'day'; displayFormats = { day: 'MM/dd' }; }
 
-  barChartInst = new Chart(canvas.getContext('2d'), {
+  // Bar width scales with how wide the time range is — wider bars on longer ranges
+  const barWidth = hours <= 24 ? 0.85 : (hours <= 72 ? 0.92 : 0.98);
+
+  barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), {
     type: 'bar',
     data: {
       datasets: [{
-        label: 'Rainfall (in)',
-        data: points,
-        backgroundColor: 'rgba(0,160,255,0.75)',
-        borderColor:     'rgba(0,230,255,1.0)',
-        borderWidth: 1,
+        label: 'Rainfall (in)', data: points,
+        backgroundColor: 'rgba(0,200,255,0.65)',
+        borderColor:     'rgba(120,240,255,1.0)',
+        borderWidth: 2,
         borderRadius: 2,
-        barPercentage: 0.9,
-        categoryPercentage: 1.0
+        barPercentage: barWidth,
+        categoryPercentage: 1.0,
+        minBarLength: 3   // ensures non-zero bars are always visible
       }]
     },
     options: {
-      responsive: true,
-      animation: false,
+      responsive: true, animation: false,
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: items => new Date(items[0].parsed.x)
-              .toLocaleString('en-US', { timeZone: TZ }),
+            title: items => new Date(items[0].parsed.x).toLocaleString('en-US', { timeZone: TZ }),
             label: c => c.parsed.y.toFixed(4) + ' in'
           }
         }
@@ -378,8 +374,7 @@ async function loadBarChart(hours) {
       scales: {
         x: {
           type: 'time',
-          min: minTime.getTime(),
-          max: maxTime.getTime(),
+          min: minTime.getTime(), max: maxTime.getTime(),
           time: { unit, displayFormats },
           ticks: { ...tickStyle, maxTicksLimit: 12 },
           grid: { color: gridColor }
@@ -390,48 +385,42 @@ async function loadBarChart(hours) {
   });
 }
 
-// ── Daily totals chart ────────────────────────────────────────────────────────
 async function loadDailyChart() {
   const since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
-  const data  = await sbQuery(
+  const data = await sbQuery(
     `rainfall?select=timestamp,rainfall_in&timestamp=gte.${since}&order=timestamp.asc&limit=10000`
   );
 
-  // Aggregate by Eastern Time date
   const daily = {};
   data.forEach(r => {
     const d = new Date(r.timestamp).toLocaleDateString('en-CA', { timeZone: TZ });
     daily[d] = (daily[d] || 0) + parseFloat(r.rainfall_in);
   });
 
-  // Build a full 30-day array — zero for days with no rain so x-axis is complete
-  const allDates = [];
-  const allTotals = [];
+  const allDates = [], allTotals = [];
   for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400 * 1000)
-      .toLocaleDateString('en-CA', { timeZone: TZ });
+    const d = new Date(Date.now() - i * 86400 * 1000).toLocaleDateString('en-CA', { timeZone: TZ });
     allDates.push(d);
     allTotals.push(+(daily[d] || 0).toFixed(4));
   }
 
   document.getElementById('dailyLoading').style.display = 'none';
-  const canvas = document.getElementById('dailyChart');
-  canvas.style.display = 'block';
-
+  document.getElementById('dailyChart').style.display = 'block';
   if (dailyChartInst) dailyChartInst.destroy();
-  dailyChartInst = new Chart(canvas.getContext('2d'), {
+
+  dailyChartInst = new Chart(document.getElementById('dailyChart').getContext('2d'), {
     type: 'bar',
     data: {
       labels: allDates,
       datasets: [{
-        label: 'Daily Total (in)',
-        data: allTotals,
-        backgroundColor: 'rgba(0,85,221,0.35)',
-        borderColor:     'rgba(0,150,255,0.85)',
-        borderWidth: 1,
+        label: 'Daily Total (in)', data: allTotals,
+        backgroundColor: 'rgba(0,150,255,0.7)',
+        borderColor:     'rgba(120,240,255,1.0)',
+        borderWidth: 2,
         borderRadius: 3,
         barPercentage: 0.85,
-        categoryPercentage: 0.9
+        categoryPercentage: 0.9,
+        minBarLength: 3
       }]
     },
     options: {
@@ -446,24 +435,20 @@ async function loadDailyChart() {
         }
       },
       scales: {
-        x: {
-          ticks: { ...tickStyle, maxRotation: 45, minRotation: 45 },
-          grid: { color: gridColor }
-        },
+        x: { ticks: { ...tickStyle, maxRotation: 45, minRotation: 45 }, grid: { color: gridColor } },
         y: yAxis
       }
     }
   });
 }
 
-// ── Recent readings table ─────────────────────────────────────────────────────
 async function loadTable() {
   const data = await sbQuery(
     'rainfall?select=timestamp,rainfall_in,total_24h,tips&order=timestamp.desc&limit=50'
   );
 
   document.getElementById('tableLoading').style.display = 'none';
-  document.getElementById('tableWrap').style.display    = 'block';
+  document.getElementById('tableWrap').style.display = 'block';
 
   const maxIn = Math.max(...data.map(r => parseFloat(r.rainfall_in)), 0.0001);
   document.getElementById('tableBody').innerHTML = data.map(r => {
@@ -478,7 +463,6 @@ async function loadTable() {
   }).join('');
 }
 
-// ── Range button handler ──────────────────────────────────────────────────────
 function setRange(hours, btn) {
   currentHours = hours;
   document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
@@ -486,38 +470,20 @@ function setRange(hours, btn) {
   loadBarChart(hours);
 }
 
-// ── Error handler ─────────────────────────────────────────────────────────────
 function handleError(err) {
   console.error(err);
   document.getElementById('syncLabel').textContent = 'Connection error';
   document.getElementById('statusDot').classList.add('err');
 }
 
-// ── Load everything ───────────────────────────────────────────────────────────
 async function loadAll() {
   try {
-    await Promise.all([
-      loadCards(),
-      loadBarChart(currentHours),
-      loadDailyChart(),
-      loadTable()
-    ]);
+    await Promise.all([loadCards(), loadBarChart(currentHours), loadDailyChart(), loadTable()]);
   } catch(e) { handleError(e); }
 }
 
 loadAll();
-
-// Auto-refresh every 5 minutes
-setInterval(async () => {
-  try {
-    await Promise.all([
-      loadCards(),
-      loadBarChart(currentHours),
-      loadDailyChart(),
-      loadTable()
-    ]);
-  } catch(e) { handleError(e); }
-}, 5 * 60 * 1000);
+setInterval(loadAll, 5 * 60 * 1000);
 </script>
 </body>
 </html>
