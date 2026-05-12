@@ -8,18 +8,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap');
-
 :root {
-  --bg:      #0a0e1a;
-  --panel:   #111827;
-  --border:  #1e3a5f;
-  --accent:  #00c8ff;
-  --accent2: #0055dd;
-  --text:    #cce8ff;
-  --muted:   #4a7fa5;
-  --green:   #00ff88;
-  --red:     #ff4466;
-  --notice:  #ffcc44;
+  --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f;
+  --accent: #00c8ff; --accent2: #0055dd; --text: #cce8ff;
+  --muted: #4a7fa5; --green: #00ff88; --red: #ff4466; --notice: #ffcc44;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -50,23 +42,19 @@ header h1 {
 .status-dot.err { background: var(--red); box-shadow: 0 0 8px var(--red); animation: none; }
 .last-sync { font-family: 'Share Tech Mono', monospace; font-size: .65rem; color: var(--muted); }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
-
 main { padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
-
 .notice {
   background: linear-gradient(90deg, rgba(255,204,68,.08), rgba(255,204,68,.04));
   border: 1px solid rgba(255,204,68,.4);
   border-left: 4px solid var(--notice);
   border-radius: 8px;
-  padding: 12px 18px;
-  margin-bottom: 20px;
+  padding: 12px 18px; margin-bottom: 20px;
   display: flex; align-items: center; gap: 12px;
   font-size: .85rem;
 }
 .notice-icon { font-size: 1.2rem; }
 .notice-text { color: #ffe8b3; line-height: 1.4; }
 .notice-text strong { color: var(--notice); font-family: 'Share Tech Mono', monospace; font-size: .8rem; letter-spacing: .08em; }
-
 .cards {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px; margin-bottom: 24px;
@@ -84,7 +72,6 @@ main { padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
 .card-lbl { font-size: .63rem; text-transform: uppercase; letter-spacing: .13em; color: var(--muted); margin-bottom: 7px; }
 .card-val { font-family: 'Share Tech Mono', monospace; font-size: 2rem; color: var(--accent); line-height: 1; }
 .card-unit { font-size: .75rem; color: var(--muted); margin-top: 5px; }
-
 .box {
   background: var(--panel); border: 1px solid var(--border);
   border-radius: 10px; padding: 20px 22px; margin-bottom: 18px;
@@ -103,7 +90,6 @@ main { padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
 .rbtn.active, .rbtn:hover {
   background: rgba(0,200,255,.12); border-color: var(--accent); color: var(--accent);
 }
-
 .tbl-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-family: 'Share Tech Mono', monospace; font-size: .75rem; }
 th {
@@ -117,7 +103,6 @@ tr:hover td { background: rgba(0,200,255,.03); }
   background: linear-gradient(90deg, var(--accent2), var(--accent));
   border-radius: 3px; vertical-align: middle; margin-left: 8px;
 }
-
 .loading {
   text-align: center; padding: 40px; color: var(--muted);
   font-family: 'Share Tech Mono', monospace; font-size: .82rem; letter-spacing: .1em;
@@ -129,7 +114,6 @@ tr:hover td { background: rgba(0,200,255,.03); }
   margin-right: 10px; vertical-align: middle;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .rain-bg {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none; z-index: 0; overflow: hidden;
@@ -140,7 +124,6 @@ tr:hover td { background: rgba(0,200,255,.03); }
   animation: fall linear infinite;
 }
 @keyframes fall { to { transform: translateY(105vh); } }
-
 footer {
   text-align: center; color: var(--muted); font-size: .62rem;
   letter-spacing: .08em; padding: 16px;
@@ -165,7 +148,6 @@ footer {
 </header>
 
 <main>
-
   <div class="notice">
     <span class="notice-icon">⏱️</span>
     <div class="notice-text">
@@ -174,11 +156,11 @@ footer {
   </div>
 
   <div class="cards">
-  <div class="card">
+    <div class="card">
       <div class="card-lbl">Last Hour</div>
       <div class="card-val" id="vhour">—</div>
       <div class="card-unit">inches</div>
-  </div>
+    </div>
     <div class="card">
       <div class="card-lbl">Today's Total</div>
       <div class="card-val" id="v24h">—</div>
@@ -200,9 +182,9 @@ footer {
     <div class="box-title">
       5-Minute Rainfall
       <div class="range-btns">
-        <button class="rbtn active" onclick="setRange(24,  this)">24h</button>
-        <button class="rbtn"        onclick="setRange(72,  this)">72h</button>
-        <button class="rbtn"        onclick="setRange(168, this)">7d</button>
+        <button class="rbtn active" onclick="setRange(24,this)">24h</button>
+        <button class="rbtn" onclick="setRange(72,this)">72h</button>
+        <button class="rbtn" onclick="setRange(168,this)">7d</button>
       </div>
     </div>
     <div id="barLoading" class="loading"><span class="spinner"></span>Fetching data…</div>
@@ -240,227 +222,269 @@ footer {
 </footer>
 
 <script>
-const SUPABASE_URL      = 'https://gavzjtjhaeyzukzvjmvm.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhdnpqdGpoYWV5enVrenZqbXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDc0MDcsImV4cCI6MjA4OTIyMzQwN30.5nukel0xQfhfmk9G1vA4UGUVXJK_NigyGEuaOzyc-sY';
-const TZ = 'America/New_York';
+var SUPABASE_URL = 'https://gavzjtjhaeyzukzvjmvm.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhdnpqdGpoYWV5enVrenZqbXZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NDc0MDcsImV4cCI6MjA4OTIyMzQwN30.5nukel0xQfhfmk9G1vA4UGUVXJK_NigyGEuaOzyc-sY';
+var TZ = 'America/New_York';
 
-let barChartInst = null, dailyChartInst = null;
-let currentHours = 24;
+var barChartInst = null;
+var dailyChartInst = null;
+var currentHours = 24;
 
 function toET(isoString) {
   return new Date(isoString).toLocaleString('en-US', { timeZone: TZ });
 }
+
 function midnightET() {
-  const etDateStr = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
-  return new Date(`${etDateStr}T00:00:00-05:00`).toISOString();
+  var etDateStr = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+  return new Date(etDateStr + 'T00:00:00-05:00').toISOString();
 }
 
 (function() {
-  const bg = document.getElementById('rainBg');
-  for (let i = 0; i < 40; i++) {
-    const d = document.createElement('div');
+  var bg = document.getElementById('rainBg');
+  for (var i = 0; i < 40; i++) {
+    var d = document.createElement('div');
     d.className = 'drop';
     d.style.cssText =
-      `left:${Math.random()*100}%;` +
-      `height:${Math.random()*65+14}px;` +
-      `animation-duration:${Math.random()*2+.7}s;` +
-      `animation-delay:-${Math.random()*3}s;` +
-      `opacity:${Math.random()*.28+.07}`;
+      'left:' + (Math.random()*100) + '%;' +
+      'height:' + (Math.random()*65+14) + 'px;' +
+      'animation-duration:' + (Math.random()*2+.7) + 's;' +
+      'animation-delay:-' + (Math.random()*3) + 's;' +
+      'opacity:' + (Math.random()*.28+.07);
     bg.appendChild(d);
   }
 })();
 
-async function sbQuery(path) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+function sbQuery(path) {
+  return fetch(SUPABASE_URL + '/rest/v1/' + path, {
     headers: {
       'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
     }
+  }).then(function(r) {
+    if (!r.ok) throw new Error('Supabase HTTP ' + r.status);
+    return r.json();
   });
-  if (!r.ok) throw new Error(`Supabase HTTP ${r.status}`);
-  return r.json();
 }
 
-const gridColor = 'rgba(30,58,95,0.4)';
-const tickStyle = { color: '#4a7fa5', font: { size: 10 } };
-const yAxis = {
-  ticks: tickStyle,
-  grid: { color: gridColor },
-  beginAtZero: true,
-  title: { display: true, text: 'Inches', color: '#4a7fa5', font: { size: 11 } }
-};
+var gridColor = 'rgba(30,58,95,0.4)';
+var tickStyle = { color: '#4a7fa5', font: { size: 10 } };
 
-async function loadCards() {
- // Latest record — used for "Last Reading" timestamp
-  const latest = await sbQuery(
-    'rainfall?select=timestamp&order=timestamp.desc&limit=1'
-  );
-  if (latest.length) {
-    document.getElementById('vlastreading').textContent =
-      toET(latest[0].timestamp);
-  }
-
-  // Last hour total — sum all 5-min records from the past 60 minutes
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const hourData = await sbQuery(
-    `rainfall?select=rainfall_in&timestamp=gte.${oneHourAgo}`
-  );
-  const hourTotal = hourData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
-  document.getElementById('vhour').textContent = hourTotal.toFixed(4);
-  }
-
-  const todayData = await sbQuery(
-    `rainfall?select=rainfall_in&timestamp=gte.${midnightET()}`
-  );
-  const todayTotal = todayData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
-  document.getElementById('v24h').textContent = todayTotal.toFixed(4);
-
-  const monthStart = new Date().toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
-  const monthData = await sbQuery(
-    `rainfall?select=rainfall_in&timestamp=gte.${monthStart}-01T00:00:00-05:00`
-  );
-  const monthTotal = monthData.reduce((s, r) => s + parseFloat(r.rainfall_in), 0);
-  document.getElementById('vmonth').textContent = monthTotal.toFixed(4);
-
-  document.getElementById('syncLabel').textContent =
-    'Updated ' + new Date().toLocaleTimeString('en-US', { timeZone: TZ }) + ' ET';
-  document.getElementById('statusDot').classList.remove('err');
+function loadCards() {
+  return Promise.all([
+    sbQuery('rainfall?select=timestamp&order=timestamp.desc&limit=1').then(function(latest) {
+      if (latest.length) {
+        document.getElementById('vlastreading').textContent = toET(latest[0].timestamp);
+      }
+    }),
+    sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + new Date(Date.now() - 60*60*1000).toISOString()).then(function(hourData) {
+      var total = hourData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
+      document.getElementById('vhour').textContent = total.toFixed(4);
+    }),
+    sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + midnightET()).then(function(todayData) {
+      var total = todayData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
+      document.getElementById('v24h').textContent = total.toFixed(4);
+    }),
+    (function() {
+      var monthStart = new Date().toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
+      return sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + monthStart + '-01T00:00:00-05:00').then(function(monthData) {
+        var total = monthData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
+        document.getElementById('vmonth').textContent = total.toFixed(4);
+      });
+    })()
+  ]).then(function() {
+    document.getElementById('syncLabel').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-US', { timeZone: TZ }) + ' ET';
+    document.getElementById('statusDot').classList.remove('err');
+  });
 }
 
-async function loadBarChart(hours) {
+function loadBarChart(hours) {
   document.getElementById('barLoading').style.display = 'block';
-  document.getElementById('barChart').style.display   = 'none';
+  document.getElementById('barChart').style.display = 'none';
   if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
 
-  const minTime = new Date(Date.now() - hours * 3600 * 1000);
-  const maxTime = new Date();
-  const data = await sbQuery(
-    `rainfall?select=timestamp,rainfall_in&timestamp=gte.${minTime.toISOString()}&order=timestamp.asc&limit=2016`
-  );
+  var minTime = new Date(Date.now() - hours * 3600 * 1000);
+  var maxTime = new Date();
 
-  document.getElementById('barLoading').style.display = 'none';
-  document.getElementById('barChart').style.display = 'block';
+  return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + minTime.toISOString() + '&order=timestamp.asc&limit=2016').then(function(data) {
+    document.getElementById('barLoading').style.display = 'none';
+    document.getElementById('barChart').style.display = 'block';
 
-  // Choose bucket size based on range:
-  // 24h → 5-min raw, 72h → 1-hr buckets, 7d → 6-hr buckets
-  let bucketMs, unit, displayFormats, yTitle;
-  if (hours <= 24) {
-    bucketMs = 5 * 60 * 1000;
-    unit = 'hour';
-    displayFormats = { hour: 'h:mm a' };
-    yTitle = 'Inches (per 5 min)';
-  } else if (hours <= 72) {
-    bucketMs = 60 * 60 * 1000;            // 1 hour
-    unit = 'hour';
-    displayFormats = { hour: 'MM/dd ha' };
-    yTitle = 'Inches (per hour)';
-  } else {
-    bucketMs = 6 * 60 * 60 * 1000;        // 6 hours
-    unit = 'day';
-    displayFormats = { day: 'MM/dd', hour: 'MM/dd ha' };
-    yTitle = 'Inches (per 6 hours)';
-  }
+    var bucketMs, unit, displayFormats, yTitle;
+    if (hours <= 24) {
+      bucketMs = 5 * 60 * 1000;
+      unit = 'hour';
+      displayFormats = { hour: 'h:mm a' };
+      yTitle = 'Inches (per 5 min)';
+    } else if (hours <= 72) {
+      bucketMs = 60 * 60 * 1000;
+      unit = 'hour';
+      displayFormats = { hour: 'MM/dd ha' };
+      yTitle = 'Inches (per hour)';
+    } else {
+      bucketMs = 6 * 60 * 60 * 1000;
+      unit = 'day';
+      displayFormats = { day: 'MM/dd', hour: 'MM/dd ha' };
+      yTitle = 'Inches (per 6 hours)';
+    }
 
-  // Aggregate data into buckets
-  const buckets = new Map();
-  data.forEach(r => {
-    const t = new Date(r.timestamp).getTime();
-    const bucketStart = Math.floor(t / bucketMs) * bucketMs;
-    buckets.set(bucketStart, (buckets.get(bucketStart) || 0) + parseFloat(r.rainfall_in));
-  });
+    var buckets = {};
+    data.forEach(function(r) {
+      var t = new Date(r.timestamp).getTime();
+      var bucketStart = Math.floor(t / bucketMs) * bucketMs;
+      buckets[bucketStart] = (buckets[bucketStart] || 0) + parseFloat(r.rainfall_in);
+    });
 
-  const points = Array.from(buckets.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([x, y]) => ({ x, y: +y.toFixed(4) }));
+    var points = Object.keys(buckets)
+      .map(function(k) { return { x: parseInt(k), y: +buckets[k].toFixed(4) }; })
+      .sort(function(a, b) { return a.x - b.x; });
 
-  barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), {
-    type: 'bar',
-    data: {
-      datasets: [{
-        label: 'Rainfall (in)', data: points,
-        backgroundColor: 'rgba(0,200,255,0.7)',
-        borderColor:     'rgba(120,240,255,1.0)',
-        borderWidth: 2,
-        borderRadius: 3,
-        barPercentage: 0.95,
-        categoryPercentage: 1.0,
-        minBarLength: 4
-      }]
-    },
-    options: {
-      responsive: true, animation: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => new Date(items[0].parsed.x).toLocaleString('en-US', { timeZone: TZ }),
-            label: c => c.parsed.y.toFixed(4) + ' in'
+    barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        datasets: [{
+          label: 'Rainfall (in)', data: points,
+          backgroundColor: 'rgba(0,200,255,0.7)',
+          borderColor: 'rgba(120,240,255,1.0)',
+          borderWidth: 2,
+          borderRadius: 3,
+          barPercentage: 0.95,
+          categoryPercentage: 1.0,
+          minBarLength: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(items) { return new Date(items[0].parsed.x).toLocaleString('en-US', { timeZone: TZ }); },
+              label: function(c) { return c.parsed.y.toFixed(4) + ' in'; }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'time',
+            min: minTime.getTime(),
+            max: maxTime.getTime(),
+            time: { unit: unit, displayFormats: displayFormats },
+            offset: true,
+            ticks: Object.assign({}, tickStyle, { maxTicksLimit: 12 }),
+            grid: { color: gridColor }
+          },
+          y: {
+            ticks: tickStyle,
+            grid: { color: gridColor },
+            beginAtZero: true,
+            title: { display: true, text: yTitle, color: '#4a7fa5', font: { size: 11 } }
           }
         }
-      },
-      scales: {
-        x: {
-          type: 'time',
-          min: minTime.getTime(), max: maxTime.getTime(),
-          time: {
-            unit,
-            displayFormats,
-            // Tell Chart.js exactly how wide each bar should be in time units
-            round: false
-          },
-          offset: true,  // adds padding so first/last bars aren't clipped
-          ticks: { ...tickStyle, maxTicksLimit: 12 },
-          grid: { color: gridColor }
-        },
-        y: {
-          ticks: tickStyle,
-          grid: { color: gridColor },
-          beginAtZero: true,
-          title: { display: true, text: yTitle, color: '#4a7fa5', font: { size: 11 } }
-        }
       }
-    }
+    });
   });
 }
 
-async function loadTable() {
-  const data = await sbQuery(
-    'rainfall?select=timestamp,rainfall_in,total_24h,tips&order=timestamp.desc&limit=50'
-  );
+function loadDailyChart() {
+  var since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
+  return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + since + '&order=timestamp.asc&limit=10000').then(function(data) {
+    var daily = {};
+    data.forEach(function(r) {
+      var d = new Date(r.timestamp).toLocaleDateString('en-CA', { timeZone: TZ });
+      daily[d] = (daily[d] || 0) + parseFloat(r.rainfall_in);
+    });
 
-  document.getElementById('tableLoading').style.display = 'none';
-  document.getElementById('tableWrap').style.display = 'block';
+    var allDates = [], allTotals = [];
+    for (var i = 29; i >= 0; i--) {
+      var d = new Date(Date.now() - i * 86400 * 1000).toLocaleDateString('en-CA', { timeZone: TZ });
+      allDates.push(d);
+      allTotals.push(+(daily[d] || 0).toFixed(4));
+    }
 
-  const maxIn = Math.max(...data.map(r => parseFloat(r.rainfall_in)), 0.0001);
-  document.getElementById('tableBody').innerHTML = data.map(r => {
-    const barW = Math.min((parseFloat(r.rainfall_in) / maxIn) * 120, 120);
-    return `<tr>
-      <td>${toET(r.timestamp)}</td>
-      <td>${parseFloat(r.rainfall_in).toFixed(4)}</td>
-      <td>${parseFloat(r.total_24h).toFixed(4)}</td>
-      <td>${r.tips}</td>
-      <td><span class="rain-bar" style="width:${barW}px"></span></td>
-    </tr>`;
-  }).join('');
+    document.getElementById('dailyLoading').style.display = 'none';
+    document.getElementById('dailyChart').style.display = 'block';
+    if (dailyChartInst) dailyChartInst.destroy();
+
+    dailyChartInst = new Chart(document.getElementById('dailyChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: allDates,
+        datasets: [{
+          label: 'Daily Total (in)', data: allTotals,
+          backgroundColor: 'rgba(0,150,255,0.7)',
+          borderColor: 'rgba(120,240,255,1.0)',
+          borderWidth: 2,
+          borderRadius: 3,
+          barPercentage: 0.85,
+          categoryPercentage: 0.9,
+          minBarLength: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: function(items) { return items[0].label; },
+              label: function(c) { return c.parsed.y.toFixed(4) + ' in'; }
+            }
+          }
+        },
+        scales: {
+          x: { ticks: Object.assign({}, tickStyle, { maxRotation: 45, minRotation: 45 }), grid: { color: gridColor } },
+          y: {
+            ticks: tickStyle,
+            grid: { color: gridColor },
+            beginAtZero: true,
+            title: { display: true, text: 'Inches', color: '#4a7fa5', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  });
+}
+
+function loadTable() {
+  return sbQuery('rainfall?select=timestamp,rainfall_in,total_24h,tips&order=timestamp.desc&limit=50').then(function(data) {
+    document.getElementById('tableLoading').style.display = 'none';
+    document.getElementById('tableWrap').style.display = 'block';
+
+    var maxIn = Math.max.apply(null, data.map(function(r) { return parseFloat(r.rainfall_in); }).concat([0.0001]));
+    document.getElementById('tableBody').innerHTML = data.map(function(r) {
+      var barW = Math.min((parseFloat(r.rainfall_in) / maxIn) * 120, 120);
+      return '<tr>' +
+        '<td>' + toET(r.timestamp) + '</td>' +
+        '<td>' + parseFloat(r.rainfall_in).toFixed(4) + '</td>' +
+        '<td>' + parseFloat(r.total_24h).toFixed(4) + '</td>' +
+        '<td>' + r.tips + '</td>' +
+        '<td><span class="rain-bar" style="width:' + barW + 'px"></span></td>' +
+        '</tr>';
+    }).join('');
+  });
 }
 
 function setRange(hours, btn) {
   currentHours = hours;
-  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('active'));
+  var btns = document.querySelectorAll('.rbtn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
   btn.classList.add('active');
-  loadBarChart(hours);
+  loadBarChart(hours).catch(handleError);
 }
 
 function handleError(err) {
-  console.error(err);
+  console.error('Dashboard error:', err);
   document.getElementById('syncLabel').textContent = 'Connection error';
   document.getElementById('statusDot').classList.add('err');
 }
 
-async function loadAll() {
-  try {
-    await Promise.all([loadCards(), loadBarChart(currentHours), loadDailyChart(), loadTable()]);
-  } catch(e) { handleError(e); }
+function loadAll() {
+  loadCards().catch(handleError);
+  loadBarChart(currentHours).catch(handleError);
+  loadDailyChart().catch(handleError);
+  loadTable().catch(handleError);
 }
 
 loadAll();
