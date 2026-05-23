@@ -11,7 +11,7 @@
 :root {
   --bg: #0a0e1a; --panel: #111827; --border: #1e3a5f;
   --accent: #00c8ff; --accent2: #0055dd; --text: #cce8ff;
-  --muted: #4a7fa5; --green: #00ff88; --red: #ff4466; --notice: #ffcc44;
+  --muted: #4a7fa5; --green: #00ff88; --red: #ff4466;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -43,18 +43,6 @@ header h1 {
 .last-sync { font-family: 'Share Tech Mono', monospace; font-size: .65rem; color: var(--muted); }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.5)} }
 main { padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
-.notice {
-  background: linear-gradient(90deg, rgba(255,204,68,.08), rgba(255,204,68,.04));
-  border: 1px solid rgba(255,204,68,.4);
-  border-left: 4px solid var(--notice);
-  border-radius: 8px;
-  padding: 12px 18px; margin-bottom: 20px;
-  display: flex; align-items: center; gap: 12px;
-  font-size: .85rem;
-}
-.notice-icon { font-size: 1.2rem; }
-.notice-text { color: #ffe8b3; line-height: 1.4; }
-.notice-text strong { color: var(--notice); font-family: 'Share Tech Mono', monospace; font-size: .8rem; letter-spacing: .08em; }
 .cards {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px; margin-bottom: 24px;
@@ -139,7 +127,7 @@ footer {
   <span class="hicon">🌧</span>
   <div>
     <h1>Rain Gauge Station</h1>
-    <p class="hsub">Tipping Bucket · 0.201 mm/tip · Eastern Time</p>
+    <p class="hsub">Tipping Bucket · 0.201 mm/tip · Eastern Time · Updates every 5 min</p>
   </div>
   <div class="hright">
     <span class="last-sync" id="syncLabel">Loading…</span>
@@ -148,13 +136,6 @@ footer {
 </header>
 
 <main>
-  <div class="notice">
-    <span class="notice-icon">⏱️</span>
-    <div class="notice-text">
-      <strong>HEADS UP</strong> — 5-minute rainfall data is captured on the station and uploaded to this dashboard once per hour in a single batch to conserve solar battery power. Records can be up to <b>60 minutes delayed</b>, but every 5-minute interval is preserved.
-    </div>
-  </div>
-
   <div class="cards">
     <div class="card">
       <div class="card-lbl">Last Hour</div>
@@ -218,7 +199,7 @@ footer {
 </main>
 
 <footer>
-  RAIN GAUGE STATION &middot; POWERED BY SUPABASE &middot; HOURLY BATCH UPLOAD
+  RAIN GAUGE STATION &middot; POWERED BY SUPABASE &middot; LIVE 5-MINUTE DATA
 </footer>
 
 <script>
