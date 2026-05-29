@@ -271,10 +271,17 @@ function loadCards() {
       var total = todayData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
       document.getElementById('v24h').textContent = total.toFixed(4);
     }),
-    sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + monthStartET() + '&limit=20000').then(function(monthData) {
-      var total = monthData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
-      document.getElementById('vmonth').textContent = total.toFixed(4);
-    })
+   fetch(SUPABASE_URL + '/rest/v1/rpc/sum_rainfall_since', {
+  method: 'POST',
+  headers: {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ since: monthStartET() })
+}).then(function(r) { return r.json(); }).then(function(total) {
+  document.getElementById('vmonth').textContent = parseFloat(total).toFixed(4);
+})
   ]).then(function() {
     document.getElementById('syncLabel').textContent =
       'Updated ' + new Date().toLocaleTimeString('en-US', { timeZone: TZ }) + ' ET';
