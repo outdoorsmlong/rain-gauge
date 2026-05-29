@@ -217,7 +217,13 @@ function toET(isoString) {
 
 function midnightET() {
   var etDateStr = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
-  return new Date(etDateStr + 'T00:00:00-05:00').toISOString();
+  return new Date(etDateStr + 'T00:00:00-04:00').toISOString();
+}
+
+function monthStartET() {
+  var etDateStr = new Date().toLocaleDateString('en-CA', { timeZone: TZ });
+  var ym = etDateStr.slice(0, 7);
+  return new Date(ym + '-01T00:00:00-04:00').toISOString();
 }
 
 (function() {
@@ -257,21 +263,18 @@ function loadCards() {
         document.getElementById('vlastreading').textContent = toET(latest[0].timestamp);
       }
     }),
-     sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + new Date(Date.now() - 60*60*1000).toISOString() + '&limit=100').then(function(hourData) {
-     var total = hourData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
+    sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + new Date(Date.now() - 60*60*1000).toISOString() + '&limit=100').then(function(hourData) {
+      var total = hourData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
       document.getElementById('vhour').textContent = total.toFixed(4);
     }),
-    sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + midnightET() + '&limit=10000').then(function(todayData) {
+    sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + midnightET() + '&limit=500').then(function(todayData) {
       var total = todayData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
       document.getElementById('v24h').textContent = total.toFixed(4);
     }),
-    (function() {
-      var monthStart = new Date().toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
-      return sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + monthStart + '-01T00:00:00-04:00&limit=20000').then(function(monthData) {
-        var total = monthData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
-        document.getElementById('vmonth').textContent = total.toFixed(4);
-      });
-    })()
+    sbQuery('rainfall?select=rainfall_in&timestamp=gte.' + monthStartET() + '&limit=20000').then(function(monthData) {
+      var total = monthData.reduce(function(s, r) { return s + parseFloat(r.rainfall_in); }, 0);
+      document.getElementById('vmonth').textContent = total.toFixed(4);
+    })
   ]).then(function() {
     document.getElementById('syncLabel').textContent =
       'Updated ' + new Date().toLocaleTimeString('en-US', { timeZone: TZ }) + ' ET';
@@ -287,7 +290,7 @@ function loadBarChart(hours) {
   var minTime = new Date(Date.now() - hours * 3600 * 1000);
   var maxTime = new Date();
 
-  return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + minTime.toISOString() + '&order=timestamp.asc&limit=2016').then(function(data) {
+  return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + minTime.toISOString() + '&order=timestamp.asc&limit=5000').then(function(data) {
     document.getElementById('barLoading').style.display = 'none';
     document.getElementById('barChart').style.display = 'block';
 
@@ -370,7 +373,7 @@ function loadBarChart(hours) {
 
 function loadDailyChart() {
   var since = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
-  return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + since + '&order=timestamp.asc&limit=10000').then(function(data) {
+  return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + since + '&order=timestamp.asc&limit=20000').then(function(data) {
     var daily = {};
     data.forEach(function(r) {
       var d = new Date(r.timestamp).toLocaleDateString('en-CA', { timeZone: TZ });
