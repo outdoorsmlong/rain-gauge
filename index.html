@@ -161,7 +161,7 @@ footer {
 
   <div class="box">
     <div class="box-title">
-      5-Minute Rainfall
+      Rainfall History
       <div class="range-btns">
         <button class="rbtn active" onclick="setRange(24,this)">24h</button>
         <button class="rbtn" onclick="setRange(72,this)">72h</button>
@@ -290,8 +290,8 @@ function loadBarChart(hours) {
   var minTime = new Date(Date.now() - hours * 3600 * 1000);
   var maxTime = new Date();
 
-  return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + minTime.toISOString() + '&order=timestamp.asc&limit=5000').then(function(data) {
-    document.getElementById('barLoading').style.display = 'none';
+return sbQuery('rainfall?select=timestamp,rainfall_in&timestamp=gte.' + minTime.toISOString() + '&order=timestamp.asc&limit=20000').then(function(data) {
+  document.getElementById('barLoading').style.display = 'none';
     document.getElementById('barChart').style.display = 'block';
 
     var bucketMs, unit, displayFormats, yTitle;
@@ -306,12 +306,11 @@ function loadBarChart(hours) {
       displayFormats = { hour: 'MM/dd ha' };
       yTitle = 'Inches (per hour)';
     } else {
-      bucketMs = 6 * 60 * 60 * 1000;
+      bucketMs = 24 * 60 * 60 * 1000;   // 1 day
       unit = 'day';
-      displayFormats = { day: 'MM/dd', hour: 'MM/dd ha' };
-      yTitle = 'Inches (per 6 hours)';
+      displayFormats = { day: 'MM/dd' };
+      yTitle = 'Inches (per day)';
     }
-
     var buckets = {};
     data.forEach(function(r) {
       var t = new Date(r.timestamp).getTime();
