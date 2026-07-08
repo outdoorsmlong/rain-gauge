@@ -97,7 +97,31 @@
       color: #7dd3fc;
       text-transform: uppercase;
       letter-spacing: 0.07em;
+    }
+    .chart-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-bottom: 14px;
+    }
+    .tabs { display: flex; gap: 6px; }
+    .tab {
+      padding: 6px 14px;
+      background: #172230;
+      color: #94a3b8;
+      border: 1px solid #2a3f54;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .tab:hover { background: #243447; }
+    .tab.active {
+      background: #0ea5e9;
+      border-color: #0ea5e9;
+      color: #fff;
     }
 
     /* Table */
@@ -181,16 +205,18 @@
     <div class="value" id="card-month">—</div>
     <div class="unit">inches</div>
   </div>
-  <div class="card">
-    <div class="label">Battery</div>
-    <div class="value" id="card-batt">—</div>
-    <div class="unit">volts</div>
-  </div>
 </div>
 
 <!-- Chart -->
 <div class="chart-wrap">
-  <h2>Rainfall — Last 24 Hours (5-min intervals)</h2>
+  <div class="chart-head">
+    <h2 id="chart-title">Rainfall — Last 24 Hours (5-min intervals)</h2>
+    <div class="tabs">
+      <button class="tab active" id="tab-24h"     onclick="switchTab('24h')">24 Hours</button>
+      <button class="tab"        id="tab-weekly"  onclick="switchTab('weekly')">Weekly</button>
+      <button class="tab"        id="tab-monthly" onclick="switchTab('monthly')">Monthly</button>
+    </div>
+  </div>
   <canvas id="rainChart" height="110"></canvas>
 </div>
 
@@ -205,11 +231,10 @@
         <th>5-min (in)</th>
         <th>24h (in)</th>
         <th>Month (in)</th>
-        <th>Battery (V)</th>
       </tr>
     </thead>
     <tbody id="data-table-body">
-      <tr><td colspan="5" style="text-align:center;color:#64748b">Loading...</td></tr>
+      <tr><td colspan="4" style="text-align:center;color:#64748b">Loading...</td></tr>
     </tbody>
   </table>
 </div>
@@ -222,34 +247,46 @@
   // ──────────────────────────────────────────────────────────────
 
   let chart = null;
+  let currentTab  = '24h';
+  let recentRows  = [];   // 5-min records, newest first
+  let dailyRows   = [];   // daily totals from daily_rainfall view, newest first
+
+  const sbHeaders = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`
+  };
 
   async function loadData() {
     setStatus('loading');
     try {
-      // Fetch last 288 records = 24h at 5-min intervals
-      const url = `${SUPABASE_URL}/rest/v1/${TABLE}`
-        + `?select=recorded_at,rain_5min,rain_24h,rain_month,battery_v`
+      // Recent 5-min records (24h worth) + daily totals (31 days), in parallel
+      const recentUrl = `${SUPABASE_URL}/rest/v1/${TABLE}`
+        + `?select=recorded_at,rain_5min,rain_24h,rain_month`
         + `&order=recorded_at.desc&limit=288`;
+      const dailyUrl = `${SUPABASE_URL}/rest/v1/daily_rainfall`
+        + `?select=day,total_in&order=day.desc&limit=31`;
 
-      const res = await fetch(url, {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
-        }
-      });
+      const [recentRes, dailyRes] = await Promise.all([
+        fetch(recentUrl, { headers: sbHeaders }),
+        fetch(dailyUrl,  { headers: sbHeaders })
+      ]);
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const rows = await res.json();
+      if (!recentRes.ok) throw new Error(`HTTP ${recentRes.status}`);
+      recentRows = await recentRes.json();
 
-      if (!rows.length) {
+      // Daily view is optional — if the SQL view isn't created yet,
+      // the 24h tab still works and the other tabs show a hint.
+      dailyRows = dailyRes.ok ? await dailyRes.json() : null;
+
+      if (!recentRows.length) {
         setStatus('No data yet — waiting for CR800', false);
         return;
       }
 
-      updateCards(rows[0]);
-      updateChart(rows);
-      updateTable(rows.slice(0, 20));
-      setStatus(`Updated ${formatTime(rows[0].recorded_at)}`, true);
+      updateCards(recentRows[0]);
+      renderChart();
+      updateTable(recentRows.slice(0, 20));
+      setStatus(`Updated ${formatTime(recentRows[0].recorded_at)}`, true);
 
     } catch (err) {
       console.error(err);
@@ -261,20 +298,49 @@
     document.getElementById('card-5min').textContent  = fmt(row.rain_5min, 4);
     document.getElementById('card-24h').textContent   = fmt(row.rain_24h,  3);
     document.getElementById('card-month').textContent = fmt(row.rain_month,2);
-    document.getElementById('card-batt').textContent  = fmt(row.battery_v, 2);
   }
 
-  function updateChart(rows) {
-    const reversed = [...rows].reverse();
-    const labels   = reversed.map(r => formatTime(r.recorded_at));
-    const data     = reversed.map(r => parseFloat(r.rain_5min) || 0);
+  // ── Chart tabs ─────────────────────────────────────────────────
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    renderChart();
+  }
 
-    if (chart) {
-      chart.data.labels = labels;
-      chart.data.datasets[0].data = data;
-      chart.update();
-      return;
+  function renderChart() {
+    let labels, data, title, decimals;
+
+    if (currentTab === '24h') {
+      const reversed = [...recentRows].reverse();
+      labels   = reversed.map(r => formatTime(r.recorded_at));
+      data     = reversed.map(r => parseFloat(r.rain_5min) || 0);
+      title    = 'Rainfall — Last 24 Hours (5-min intervals)';
+      decimals = 4;
+    } else {
+      const days = currentTab === 'weekly' ? 7 : 31;
+      title = currentTab === 'weekly'
+        ? 'Rainfall — Daily Totals (Last 7 Days)'
+        : 'Rainfall — Daily Totals (Last 31 Days)';
+      decimals = 2;
+
+      if (!dailyRows) {
+        labels = [];
+        data   = [];
+        title += ' — create the daily_rainfall view in Supabase';
+      } else {
+        const slice = dailyRows.slice(0, days).reverse();
+        labels = slice.map(r => formatDay(r.day));
+        data   = slice.map(r => parseFloat(r.total_in) || 0);
+      }
     }
+
+    document.getElementById('chart-title').textContent = title;
+    drawChart(labels, data, decimals);
+  }
+
+  function drawChart(labels, data, decimals) {
+    if (chart) { chart.destroy(); chart = null; }
 
     const ctx = document.getElementById('rainChart').getContext('2d');
     chart = new Chart(ctx, {
@@ -296,7 +362,7 @@
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: ctx => `${ctx.parsed.y.toFixed(4)}"` 
+              label: ctx => `${ctx.parsed.y.toFixed(decimals)}"` 
             }
           }
         },
@@ -331,8 +397,13 @@
         <td>${fmt(r.rain_5min, 4)}</td>
         <td>${fmt(r.rain_24h,  4)}</td>
         <td>${fmt(r.rain_month,4)}</td>
-        <td>${fmt(r.battery_v, 2)}</td>
       </tr>`).join('');
+  }
+
+  function formatDay(dayStr) {
+    if (!dayStr) return '—';
+    const d = new Date(dayStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
   }
 
   function setStatus(msg, ok = null, err = false) {
